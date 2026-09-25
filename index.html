@@ -1,164 +1,69 @@
-import sys
-from kivy.app import App
-from kivy.uix.modalview import ModalView
-from kivy.utils import platform
-
-# Evitamos que se carguen módulos de escritorio si estamos en entornos de desarrollo alternos
-if platform == 'android':
-    from android.runnable import run_on_ui_thread
-    from jnius import autoclass
-else:
-    def run_on_ui_thread(func):
-        return func
-
-# Tu interfaz HTML integrada y optimizada con Viewports móviles estrictos
-HTML_INTERFAZ = """
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0f0c29">
-<title>IO Inteligencia Ómica | Navegador Quantum</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IO INTELIGENCIA OMICA</title>
 <style>
-@import url('https://googleapis.com');
-:root{--bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;--gold:#FFD700;--gold2:#FFB800;--green:#25D366;--purple:#7C3AED;}
-*{box-sizing:border-box;margin:0;padding:0;touch-action:manipulation;}
-body{font-family:'Outfit',system-ui;min-height:100vh;background:radial-gradient(1200px 800px at 20% -10%, #4a2a8a 0%, transparent 60%),radial-gradient(1000px 600px at 90% 10%, #b8860b 0%, transparent 50%),linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));overflow-x:hidden;color:#1a1a2e}
-.app{position:relative;z-index:1;width:100vw;max-width:480px;margin:0 auto;padding:16px 14px 24px}
-.top-nav{display:flex;justify-content:space-between;align-items:center;color:#ffd78a;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
-.live{width:8px;height:8px;background:#25D366;border-radius:50%;display:inline-block;box-shadow:0 0 12px #25D366;animation:pulseLive 1.8s infinite}
-@keyframes pulseLive{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
-.card-main{background:linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,251,230,0.98) 100%);border:2px solid rgba(255,215,0,0.6);border-radius:28px;padding:20px 16px;box-shadow:0 20px 60px rgba(0,0,0,0.35);position:relative;overflow:hidden;}
-.huzar-badge{display:inline-flex;gap:8px;align-items:center;background:linear-gradient(135deg,#1a0f3c,#302b63);color:#FFD700;border:1px solid #FFD700;padding:6px 12px;border-radius:999px;font-size:10px;letter-spacing:1.2px;font-weight:900}
-.avatar-quantum{width:110px;height:110px;margin:12px auto 10px;position:relative}
-.avatar-ring{position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(from 0deg,#FFD700,#FF8C00,#FFD700,#FFF3B0,#FFD700);animation:rotateGold 3s linear infinite;-webkit-mask:radial-gradient(circle 51px at center, transparent 50px, black 51px)}
-@keyframes rotateGold{to{transform:rotate(360deg)}}
-.avatar-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF9C4,#FFD700 40%,#B8860B);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:900;font-size:46px;color:#2a145a;box-shadow:inset 0 2px 8px rgba(255,255,255,0.8),0 8px 24px rgba(184,134,11,0.3);}
-.title{font-size:28px;font-weight:900;color:#1e0f3f;line-height:0.95;letter-spacing:-1px;text-align:center}
-.subtitle{color:#6d5a8e;font-weight:700;font-size:13px;text-align:center;margin:4px 0 2px}
-.stats{display:flex;gap:6px;justify-content:center;margin:12px 0 8px}
-.stat{background:linear-gradient(135deg,#fff,#fff7cc);border:1px solid #ffe27a;border-radius:12px;padding:6px 8px;min-width:78px;text-align:center}
-.stat b{display:block;font-size:15px;color:#2a145a} .stat span{font-size:9px;color:#8a7a5a;font-weight:700;text-transform:uppercase}
-.quantum-title{background:linear-gradient(90deg,#B8860B 0%,#FFD700 30%,#FF8C00 60%,#B8860B 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmerGold 3s linear infinite;font-size:24px;font-weight:900;text-align:center;line-height:1.05;margin:6px 0}
-@keyframes shimmerGold{to{background-position:200% center}}
-.desc{font-size:13.5px;color:#2e2e3a;line-height:1.4;text-align:center;margin:0 4px 12px}
-.grid-tech{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
-.tech-card{background:linear-gradient(135deg, rgba(124,58,237,0.08), rgba(255,215,0,0.12));border:1px solid rgba(124,58,237,0.15);border-radius:14px;padding:8px}
-.tech-card b{font-size:11px;display:block;color:#2a145a} .tech-card small{font-size:10px;color:#5a4a7a;line-height:1.2;display:block;margin-top:2px}
-.engine{background:#0f0c29;color:#ffe9a0;border-radius:16px;padding:10px;margin:10px 0;font-family:'Space Grotesk',monospace;font-size:11px;line-height:1.4;border:1px solid rgba(255,215,0,0.25)}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px}
-.chat-quantum{background:linear-gradient(180deg,#f8f5ff,#ffffff);border:1px solid #e8ddff;border-radius:16px;padding:10px;min-height:74px;margin:10px 0}
-.msg-q{background:linear-gradient(135deg,#5b3cc6,#7c3aed);color:#fff;padding:10px 12px;border-radius:16px 16px 16px 4px;max-width:90%;font-size:13px;line-height:1.35}
-.input-wrap{position:relative;margin-top:10px}
-.input-wrap input{-webkit-appearance:none;width:100%;padding:14px 48px 14px 16px;border-radius:999px;border:2px solid #f1d85a;background:rgba(255,255,255,0.95);font-size:15px;outline:none}
-.input-wrap button{position:absolute;right:5px;top:5px;width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,#5b3cc6,#302b63);color:#fff;font-weight:900;cursor:pointer}
-.footer{margin-top:14px;text-align:center;font-size:10px;color:#d8c88a;letter-spacing:.8px}
+body{margin:0;font-family:Arial;background:linear-gradient(135deg,#0f0c29,#302b63);display:flex;justify-content:center;padding:10px}
+.app{width:100%;max-width:420px;background:#fffdf5;border:3px solid gold;border-radius:24px;overflow:hidden}
+.top{background:#0f0c29;color:white;padding:14px;text-align:center;font-weight:bold}
+.top span{color:gold;font-size:22px;display:block}
+.estado{display:flex;justify-content:space-around;background:#fffbe6;padding:8px;font-size:12px;font-weight:bold;border-bottom:2px solid gold}
+.chat{padding:12px;height:300px;overflow:auto;background:white}
+.b{padding:10px;border-radius:16px;margin:6px 0;font-size:14px}
+.b.ia{background:#5b3cc6;color:#fff}
+.b.yo{background:#ffec8b;text-align:right;margin-left:15%}
+.barra{display:flex;border:2px solid gold;border-radius:99px;padding:6px;margin:10px;background:#fff}
+.barra input{flex:1;border:0;outline:0;padding:8px}
+.barra button{border:0;background:#5b3cc6;color:#fff;border-radius:50%;width:42px;height:42px;font-size:20px}
+.qr{border:2px dashed gold;border-radius:16px;padding:12px;display:flex;gap:10px;background:#fffbe6;margin:10px}
+.btn{background:#25d366;color:#fff;display:block;text-align:center;padding:14px;border-radius:99px;font-weight:bold;text-decoration:none;margin:10px}
+.final{background:linear-gradient(135deg,#0f0c29,#302b63);color:#fff;border-radius:18px;padding:16px;margin:10px;text-align:center;border:2px solid gold}
 </style>
 </head>
 <body>
 <div class="app">
-<div class="top-nav"><span><span class="live"></span> IO QUANTUM MÓVIL</span><span>EN LÍNEA</span></div>
-<div class="card-main">
-<span class="huzar-badge">✦ IO • INTELIGENCIA ÓMICA</span>
-<div class="avatar-quantum"><div class="avatar-ring"></div><div class="avatar-core">IO</div></div>
-<div class="title">IO Móvil</div>
-<div class="subtitle">Navegación Celular Inteligente Cuántica</div>
-<div class="stats">
-<div class="stat"><b>4.9★</b><span>Móvil</span></div>
-<div class="stat"><b>ÓMICA</b><span>Análisis IA</span></div>
-<div class="stat"><b>100%</b><span>Seguro</span></div>
+<div class="top"><span>IO</span>INTELIGENCIA OMICA - Quantum 4.0</div>
+<div class="estado"><span>🔋 MOBILE_CORE: ONLINE</span><span>🛡️ SHIELD: ACTIVO</span></div>
+<div class="chat" id="chat">
+<div class="b ia">¡Hola! Soy IO Inteligencia Omica 💛 ¿Tu cel está lento o quieres monetizar?</div>
 </div>
-<div class="quantum-title">CELULAR DORADO 4.0</div>
-<p class="desc">Explora la red con procesamiento ómico bio-inspirado y optimización cuántica para smartphones.</p>
-<div class="grid-tech">
-<div class="tech-card"><b>WebKit Core</b><small>Renderizado móvil fluido</small></div>
-<div class="tech-card"><b>Criptografía Dorada</b><small>Privacidad absoluta</small></div>
+
+<div class="barra">
+<input id="barraIO" placeholder="Escribe: google.com y pulsa ➜" onkeydown="if(event.key==='Enter') irIO()">
+<button onclick="irIO()">➜</button>
 </div>
-<div class="engine">
-<div><span class="dot" style="background:#25D366"></span>MOBILE_CORE: ONLINE</div>
-<div><span class="dot" style="background:#FFD700"></span>QUANTUM_SHIELD: ACTIVO</div>
+
+<div class="qr">
+<div style="width:70px;height:70px;background:#fff;border:2px solid gold;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;text-align:center"><b>IO<br>OMICA<br>ACTIVA</b></div>
+<div style="font-size:13px"><b>IO OMICA ACTIVA</b><br>📞 300 751 8366<br>📍 Bogotá 24/7<br>IO-OMICA-8366</div>
 </div>
-<div class="chat-quantum">
-<div class="msg-q">Introduce una dirección web abajo para iniciar la navegación cuántica móvil.</div>
+<a class="btn" href="https://wa.me/573007518366">💬 HABLAR CON MERCEDES</a>
+
+<div class="final">
+<div style="font-size:22px">🧬✨🔒</div>
+<b style="color:gold">ÉNFASIS FINAL: IO ACTIVA 24/7</b><br><br>
+Protejo tu celular, datos y familia.<br><br>
+<span style="background:gold;color:#000;padding:6px 12px;border-radius:99px;font-weight:bold">⛪ TEMPLOS = GRATIS</span><br><br>
+Motor Bogotá: $20k, $35k, $50k, $70k, $80k<br>
+⚠️ Sin IO estás vulnerable
 </div>
-<div class="input-wrap">
-<input type="text" placeholder="Ej: google.com..." id="urlInput" onkeydown="if(event.key === 'Enter') navigate()">
-<button onclick="navigate()">➡</button>
-</div>
-</div>
-<div class="footer">IO INTELIGENCIA ÓMICA © 2026</div>
 </div>
 
 <script>
-function navigate() {
-    var url = document.getElementById('urlInput').value.trim();
-    if(url) {
-        if (!url.startsWith('http://') && !url.startswith('https://')) {
-            url = 'https://' + url;
-        }
-        // Puente nativo universal para WebView Móviles
-        if (window.AndroidBridge) {
-            window.AndroidBridge.solicitarNavegacion(url);
-        } else {
-            // Callback fallback para depuración o iOS Swift-inject
-            window.location.href = url;
-        }
-    }
+function irIO(){
+let input=document.getElementById('barraIO');
+let url=input.value.trim();
+if(!url){alert('Escribe google.com');return;}
+if(!url.startsWith('http')){url='https://'+url;}
+let chat=document.getElementById('chat');
+chat.innerHTML+=`<div class="b yo">🌐 ${url}</div>`;
+chat.innerHTML+=`<div class="b ia">🚀 Navegando con IO... Abriendo ${url} con escudo activo 🛡️</div>`;
+chat.scrollTop=chat.scrollHeight;
+window.open(url,'_blank');
+input.value='';
 }
 </script>
 </body>
 </html>
-"""
-
-class NavegadorOmicaApp(App):
-    def build(self):
-        self.title = "IO Inteligencia Ómica"
-        if platform == 'android':
-            return self.inicializar_webview_android()
-        else:
-            # Vista fallback de escritorio para pruebas rápidas en PC antes de compilar
-            from kivy.uix.label import Label
-            return Label(text="Navegador Dorado IO listo para empaquetar en Android/iOS.\\nEjecuta en tu smartphone.")
-
-    @run_on_ui_thread
-    def inicializar_webview_android(self):
-        # Acceso directo al motor del sistema operativo móvil (Android SDK) vía Pyjnius
-        PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        WebView = autoclass('android.webkit.WebView')
-        WebViewClient = autoclass('android.webkit.WebViewClient')
-        WebSettings = autoclass('android.webkit.WebSettings')
-        Context = autoclass('android.content.Context')
-        
-        activity = PythonActivity.mActivity
-        webview = WebView(activity)
-        settings = webview.getSettings()
-        
-        # Optimizaciones móviles críticas
-        settings.setJavaScriptEnabled(True)
-        settings.setDomStorageEnabled(True)
-        settings.setBuiltInZoomControls(True)
-        settings.setDisplayZoomControls(False)
-        settings.setUseWideViewPort(True)
-        settings.setLoadWithOverviewMode(True)
-        
-        webview.setWebViewClient(WebViewClient())
-        
-        # Creación del puente nativo de Javascript a Python en Android
-        class AndroidBridge:
-            def __init__(self, wv):
-                self.wv = wv
-            def solicitarNavegacion(self, url):
-                # Corrección del hilo nativo UI para cargar la dirección web elegida
-                activity.runOnUiThread(lambda: self.wv.loadUrl(url))
-        
-        # Vinculamos la lógica de la interfaz dorada con el motor Android
-        bridge = AndroidBridge(webview)
-        webview.addJavascriptInterface(bridge, "AndroidBridge")
-        
-        # Cargamos tu interfaz gráfica directo en la memoria del celular
-        webview.loadDataWithBaseURL(None, HTML_INTERFAZ, "text/html", "UTF-8", None)
-        activity.setContentView(webview)
-        return webview
-
- 
