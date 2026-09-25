@@ -1,24 +1,19 @@
-from kivy.app import App
-from kivy.utils import platform
-from kivy.uix.label import Label
-
-if platform == 'android':
-    from jnius import autoclass, PythonJavaClass, java_method
-
-HTML_INTERFAZ = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IO Móvil - Celular Dorado 4.0</title>
+<title>IO Móvil</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0c29">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
-body{font-family:'Outfit';min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);margin:0;display:flex;align-items:center;justify-content:center;padding:14px}
-.card{background:linear-gradient(180deg,#fff,#fffbe6);border:2px solid #FFD700;border-radius:28px;padding:20px 16px;max-width:420px;width:100%;text-align:center}
-.avatar{width:110px;height:110px;margin:12px auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF9C4,#FFD700 40%,#B8860B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:46px;color:#2a145a;}
-.input-wrap{position:relative;margin-top:12px}
-.input-wrap input{width:100%;padding:14px 48px 14px 16px;border-radius:999px;border:2px solid #f1d85a;font-size:15px}
-.input-wrap button{position:absolute;right:5px;top:5px;width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,#5b3cc6,#302b63);color:#fff;font-weight:900}
+body{margin:0;font-family:'Outfit';min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);display:flex;align-items:center;justify-content:center;padding:14px}
+.card{background:#fffef5;border:2px solid #FFD700;border-radius:28px;padding:22px 18px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.avatar{width:110px;height:110px;margin:0 auto 10px;background:radial-gradient(circle at 30% 30%,#FFF9C4,#FFD700 40%,#B8860B);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:48px;color:#2a145a}
+h1{margin:6px 0 0;color:#1e0f3f} p{color:#6b5a8a;font-size:13px}
+input{width:100%;margin-top:14px;padding:14px 16px;border-radius:999px;border:2px solid #f1d85a;font-size:15px;box-sizing:border-box}
+button{width:100%;margin-top:10px;padding:14px;border-radius:999px;border:0;background:linear-gradient(135deg,#5b3cc6,#302b63);color:#fff;font-weight:900;font-size:16px}
 </style>
 </head>
 <body>
@@ -26,57 +21,10 @@ body{font-family:'Outfit';min-height:100vh;background:linear-gradient(135deg,#0f
 <div class="avatar">IO</div>
 <h1>IO Móvil</h1>
 <p>Navegación Cuántica Dorada</p>
-<div class="input-wrap">
-<input type="text" placeholder="Ej: google.com" id="urlInput" onkeydown="if(event.key === 'Enter') navigate()">
-<button onclick="navigate()">➡</button>
+<input type="text" id="url" placeholder="Ej: google.com">
+<button onclick="let u=document.getElementById('url').value.trim();if(!u)return;if(!u.startsWith('http'))u='https://'+u;location.href=u">➡ Navegar</button>
+<p style="font-size:10px;margin-top:14px;color:#a0906a">IO INTELIGENCIA ÓMICA © 2026</p>
 </div>
-</div>
-<script>
-function navigate() {
-    var url = document.getElementById('urlInput').value.trim();
-    if(!url) return;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) { url = 'https://' + url; }
-    if (window.AndroidBridge) { window.AndroidBridge.solicitarNavegacion(url); }
-    else { window.location.href = url; }
-}
-</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}</script>
 </body>
 </html>
-"""
-
-if platform == 'android':
-    class AndroidBridge(PythonJavaClass):
-        __javainterfaces__ = ['java/lang/Object']
-        __javacontext__ = 'app'
-        def __init__(self, webview):
-            super().__init__()
-            self.webview = webview
-        @java_method('(Ljava/lang/String;)V')
-        def solicitarNavegacion(self, url):
-            PythonActivity = autoclass('org.kivy.android.PythonActivity')
-            activity = PythonActivity.mActivity
-            activity.runOnUiThread(lambda: self.webview.loadUrl(url))
-
-class NavegadorOmicaApp(App):
-    def build(self):
-        if platform != 'android':
-            return Label(text="IO Movil listo para compilar")
-        PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        WebView = autoclass('android.webkit.WebView')
-        WebViewClient = autoclass('android.webkit.WebViewClient')
-        activity = PythonActivity.mActivity
-        webview = WebView(activity)
-        s = webview.getSettings()
-        s.setJavaScriptEnabled(True)
-        s.setDomStorageEnabled(True)
-        s.setUseWideViewPort(True)
-        s.setLoadWithOverviewMode(True)
-        webview.setWebViewClient(WebViewClient())
-        bridge = AndroidBridge(webview)
-        webview.addJavascriptInterface(bridge, "AndroidBridge")
-        webview.loadDataWithBaseURL("https://localhost/", HTML_INTERFAZ, "text/html", "UTF-8", None)
-        activity.setContentView(webview)
-        return Label(text="Cargado")
-
-if __name__ == '__main__':
-    NavegadorOmicaApp().run()
