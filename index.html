@@ -1,17 +1,159 @@
-import os, sys
-from PyQt6.QtCore import QUrl
-from PyQt6.QtWidgets import QApplication, QMainWindow
+import sys
+from PyQt6.QtCore import QUrl, pyqtSlot
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-class NavegadorIO(QMainWindow):
+from PyQt6.QtWebChannel import QWebChannel
+
+# Tu interfaz HTML integrada y adaptada con el puente de navegación nativo
+HTML_INTERFAZ = """
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0f0c29">
+<title>IO Inteligencia Ómica | Navegador Quantum</title>
+<style>
+@import url('https://googleapis.com');
+:root{--bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;--gold:#FFD700;--gold2:#FFB800;--green:#25D366;--purple:#7C3AED;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',system-ui;min-height:100vh;background:radial-gradient(1200px 800px at 20% -10%, #4a2a8a 0%, transparent 60%),radial-gradient(1000px 600px at 90% 10%, #b8860b 0%, transparent 50%),linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));overflow-x:hidden;color:#1a1a2e}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:18px 14px 40px}
+.top-nav{display:flex;justify-content:space-between;align-items:center;color:#ffd78a;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:10px}
+.live{width:8px;height:8px;background:#25D366;border-radius:50%;display:inline-block;box-shadow:0 0 12px #25D366;animation:pulseLive 1.8s infinite}
+@keyframes pulseLive{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
+.card-main{background:linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,251,230,0.98) 100%);border:2px solid rgba(255,215,0,0.6);border-radius:32px;padding:22px 18px 18px;box-shadow:0 0 0 1px rgba(255,215,0,0.2),0 30px 80px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,1);position:relative;overflow:hidden;animation:floatCard 6s ease-in-out infinite}
+@keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.huzar-badge{display:inline-flex;gap:8px;align-items:center;background:linear-gradient(135deg,#1a0f3c,#302b63);color:#FFD700;border:1px solid #FFD700;padding:6px 14px;border-radius:999px;font-size:11px;letter-spacing:1.4px;font-weight:900}
+.avatar-quantum{width:132px;height:132px;margin:16px auto 12px;position:relative}
+.avatar-ring{position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(from 0deg,#FFD700,#FF8C00,#FFD700,#FFF3B0,#FFD700);animation:rotateGold 3s linear infinite;-webkit-mask:radial-gradient(circle 62px at center, transparent 61px, black 62px)}
+@keyframes rotateGold{to{transform:rotate(360deg)}}
+.avatar-core{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF9C4,#FFD700 40%,#B8860B);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:900;font-size:58px;color:#2a145a;box-shadow:inset 0 2px 8px rgba(255,255,255,0.8),0 10px 30px rgba(184,134,11,0.4);overflow:hidden}
+.title{font-size:32px;font-weight:900;color:#1e0f3f;line-height:0.95;letter-spacing:-1px;text-align:center}
+.subtitle{color:#6d5a8e;font-weight:700;font-size:14px;text-align:center;margin:6px 0 2px}
+.stats{display:flex;gap:8px;justify-content:center;margin:14px 0 10px}
+.stat{background:linear-gradient(135deg,#fff,#fff7cc);border:1px solid #ffe27a;border-radius:14px;padding:8px 10px;min-width:84px;text-align:center}
+.stat b{display:block;font-size:18px;color:#2a145a} .stat span{font-size:10px;color:#8a7a5a;font-weight:700;text-transform:uppercase}
+.quantum-title{background:linear-gradient(90deg,#B8860B 0%,#FFD700 30%,#FF8C00 60%,#B8860B 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:200% auto;animation:shimmerGold 3s linear infinite;font-size:28px;font-weight:900;text-align:center;line-height:1.05;margin:8px 0 8px}
+@keyframes shimmerGold{to{background-position:200% center}}
+.desc{font-size:14.5px;color:#2e2e3a;line-height:1.5;text-align:center;margin:0 6px 14px}
+.grid-tech{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.tech-card{background:linear-gradient(135deg, rgba(124,58,237,0.08), rgba(255,215,0,0.12));border:1px solid rgba(124,58,237,0.15);border-radius:18px;padding:10px}
+.tech-card b{font-size:12px;display:block;color:#2a145a} .tech-card small{font-size:11px;color:#5a4a7a;line-height:1.3;display:block;margin-top:2px}
+.engine{background:#0f0c29;color:#ffe9a0;border-radius:20px;padding:12px;margin:12px 0;font-family:'Space Grotesk',monospace;font-size:11.5px;line-height:1.5;border:1px solid rgba(255,215,0,0.25);position:relative;overflow:hidden}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:6px}
+.chat-quantum{background:linear-gradient(180deg,#f8f5ff,#ffffff);border:1px solid #e8ddff;border-radius:20px;padding:12px;min-height:88px;margin:12px 0}
+.msg-q{background:linear-gradient(135deg,#5b3cc6,#7c3aed);color:#fff;padding:11px 13px;border-radius:18px 18px 18px 4px;max-width:88%;font-size:13.5px;line-height:1.4}
+.input-wrap{position:relative;margin-top:10px}
+.input-wrap input{width:100%;padding:14px 48px 14px 16px;border-radius:999px;border:2px solid #f1d85a;background:rgba(255,255,255,0.9);font-size:15px;outline:none}
+.input-wrap button{position:absolute;right:5px;top:5px;width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,#5b3cc6,#302b63);color:#fff;font-weight:900;cursor:pointer}
+.footer{margin-top:14px;text-align:center;font-size:10.5px;color:#d8c88a;letter-spacing:.8px}
+</style>
+<!-- Cargamos la librería de comunicación nativa de PyQt -->
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+</head>
+<body>
+<div class="app">
+<div class="top-nav"><span><span class="live"></span> IO QUANTUM 4.0</span><span>BOGOTÁ EN LÍNEA</span></div>
+<div class="card-main">
+<span class="huzar-badge">✦ IO • INTELIGENCIA ÓMICA • NAVEGADOR DORADO</span>
+<div class="avatar-quantum"><div class="avatar-ring"></div><div class="avatar-core">IO</div></div>
+<div class="title">IO<br>Inteligencia Ómica</div>
+<div class="subtitle">Navegación Celular Inteligente Cuántica</div>
+<div class="stats">
+<div class="stat"><b>4.9★</b><span>Calificación</span></div>
+<div class="stat"><b>ÓMICA</b><span>Análisis IA</span></div>
+<div class="stat"><b>100%</b><span>Seguro</span></div>
+</div>
+
+<div class="quantum-title">CELULAR DORADO 4.0</div>
+<p class="desc">Explora la red con procesamiento ómico bio-inspirado y optimización cuántica para dispositivos móviles.</p>
+
+<div class="grid-tech">
+<div class="tech-card"><b>Motor Blink core</b><small>Renderizado ultra veloz 60fps</small></div>
+<div class="tech-card"><b>Criptografía Dorada</b><small>Privacidad multinivel absoluta</small></div>
+</div>
+
+<div class="engine">
+<div><span class="dot" style="background:#25D366"></span>IO_ENGINE_LOADED: 100%</div>
+<div><span class="dot" style="background:#FFD700"></span>QUANTUM_SHIELD: ACTIVO</div>
+</div>
+
+<div class="chat-quantum">
+<div class="msg-q">Bienvenido a IO Inteligencia Ómica. Introduce una dirección web abajo para iniciar la navegación cuántica.</div>
+</div>
+
+<div class="input-wrap">
+<!-- Escucha la tecla Enter para navegar rápido -->
+<input type="text" placeholder="Buscar o introducir URL (ej: google.com)..." id="urlInput" onkeydown="if(event.key === 'Enter') navigate()">
+<button onclick="navigate()">➡</button>
+</div>
+</div>
+
+<div class="footer">IO INTELIGENCIA ÓMICA © 2026 • ÁNGEL GUARDIÁN HUZAR</div>
+</div>
+
+<script>
+var backend;
+// Inicializamos el canal de comunicación con Python
+new QWebChannel(qt.webChannelTransport, function (channel) {
+    backend = channel.objects.backend;
+});
+
+function navigate() {
+    const url = document.getElementById('urlInput').value.trim();
+    if(url && backend) {
+        // Llamamos directamente a la función de Python pasándole la URL
+        backend.solicitar_navegacion(url);
+    }
+}
+</script>
+</body>
+</html>
+"""
+
+# Clase puente para conectar JavaScript (HTML) con Python
+class PuenteNativo(QWidget):
+    def __init__(self, browser_widget):
+        super().__init__()
+        self.browser = browser_widget
+
+    @pyqtSlot(str)
+    def solicitar_navegacion(self, url):
+        # Si el usuario no escribe http o https, se lo agregamos automáticamente
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = "https://" + url
+        # El motor nativo carga la página solicitada
+        self.browser.setUrl(QUrl(url))
+
+class IONavegador(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("IO INTELIGENCIA OMICA - Navegador")
-        self.resize(450,800)
-        view=QWebEngineView()
-        view.load(QUrl.fromLocalFile(os.path.abspath("index.html")))
-        self.setCentralWidget(view)
-if __name__=="__main__":
-    app=QApplication(sys.argv)
-    v=NavegadorIO()
-    v.show()
+        self.setWindowTitle("IO Inteligencia Ómica - Navegador Quantum 4.0")
+        self.setGeometry(100, 100, 500, 820) # Formato estilizado tipo celular vertical
+
+        self.browser = QWebEngineView()
+        
+        # Configurar el canal WebChannel para comunicar HTML con Python
+        self.channel = QWebChannel()
+        self.puente = PuenteNativo(self.browser)
+        self.channel.registerObject("backend", self.puente)
+        self.browser.page().setWebChannel(self.channel)
+
+        # Cargar tu espectacular código HTML como página de inicio
+        self.browser.setHtml(HTML_INTERFAZ)
+
+        # Diseño de la ventana
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.browser)
+
+        contenedor = QWidget()
+        contenedor.setLayout(layout)
+        self.setCentralWidget(contenedor)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    ventana = IONavegador()
+    ventana.show()
     sys.exit(app.exec())
