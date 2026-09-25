@@ -162,4 +162,88 @@ card.addEventListener('mouseleave',()=>{card.style.transform='';});
 setInterval(()=>{let s=document.getElementById('statusText');let phrases=['Escaneando frecuencia celular...','Optimizando memoria cuántica...','Escudo Huzar activo...','Voz sincronizada...'];s.textContent=phrases[Math.floor(Math.random()*phrases.length)]+' '+(68+Math.floor(Math.random()*30))+'%';},3000);
 </script>
 </body>
-</html>
+</html> <!-- PEGAR A LO ÚLTIMO - ESCÁNER 7 CAPAS -->
+<style>
+.huzar-lab{margin:18px;background:linear-gradient(145deg,rgba(26,15,60,.95),rgba(48,43,99,.9));border:1px solid rgba(255,215,0,.3);border-radius:18px;padding:18px;box-shadow:0 0 25px rgba(124,58,237,.3);font-family:sans-serif}
+.huzar-lab h3{color:#FFD700;margin:0 0 8px;font-size:1.2rem}
+.huzar-chip{display:inline-block;border:1px solid #b8a05a;color:#ffe9a0;border-radius:999px;padding:6px 11px;margin:4px;font-size:.85rem;cursor:pointer;user-select:none}
+.huzar-chip.active{background:#FFD700;color:#1a0f3c;font-weight:900}
+.huzar-layer{margin-top:12px;background:rgba(0,0,0,.35);border-left:3px solid #FFD700;border-radius:10px;padding:11px 12px;font-size:.92rem;color:#e8e0ff;display:none;line-height:1.4}
+.huzar-layer b{color:#FFD700}
+.huzar-progress{height:8px;background:#2a2150;border-radius:999px;overflow:hidden;margin-top:12px}
+.huzar-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#FFD700,#b8860b);transition:width.6s}
+</style>
+
+<div id="huzarMount"></div>
+
+<script>
+(function(){
+const html = `
+<div class="huzar-lab" id="huzarLab">
+<h3>🔬 Laboratorio Huzar - 7 Capas</h3>
+<div style="color:#c5b3ff;font-size:.88rem;margin-bottom:10px">Pregunta: ¿Mi celular tiene virus? Marca lo que te pasa:</div>
+<div id="huzarChips">
+<span class="huzar-chip" data-v="bateria">🔋 Batería se acaba</span>
+<span class="huzar-chip" data-v="datos">📶 Datos se acaban</span>
+<span class="huzar-chip" data-v="anuncios">💥 Anuncios solos</span>
+<span class="huzar-chip" data-v="appRara">👻 App que no instalé</span>
+<span class="huzar-chip" data-v="caliente">🌡️ Se calienta</span>
+<span class="huzar-chip" data-v="lento">🐢 Lento de repente</span>
+<span class="huzar-chip" data-v="sms">📤 SMS solos</span>
+</div>
+<button style="margin-top:14px;width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(90deg,#7C3AED,#FFD700);color:#fff;font-weight:900;cursor:pointer" onclick="huzarAnalizar()">⚡ ANALIZAR EN 7 CAPAS</button>
+<div class="huzar-progress"><i id="huzarBar"></i></div>
+<div id="hL1" class="huzar-layer"></div>
+<div id="hL2" class="huzar-layer"></div>
+<div id="hL3" class="huzar-layer"></div>
+<div id="hL4" class="huzar-layer"></div>
+<div id="hL5" class="huzar-layer"></div>
+<div id="hL6" class="huzar-layer"></div>
+<div id="hL7" class="huzar-layer"></div>
+<div style="margin-top:12px;display:none" id="huzarCTA">
+<a href="https://wa.me/573007518366?text=Hola%20Mercedes%20mi%20escaner%20dio%20alerta%20quiero%20Escudo%20Huzar" target="_blank" style="display:block;text-align:center;padding:12px;background:#FFD700;color:#1a0f3c;border-radius:12px;font-weight:900;text-decoration:none">💬 Pedir Escudo Huzar $35k</a>
+</div>
+</div>`;
+
+function mount(){
+let target = document.getElementById('tiltCard') || document.querySelector('.card') || document.body;
+let m = document.getElementById('huzarMount');
+if(m){ m.innerHTML = html; } else { target.insertAdjacentHTML('beforeend', html); }
+let sel = new Set();
+document.querySelectorAll('.huzar-chip').forEach(ch=>{
+ch.onclick=()=>{
+let v=ch.dataset.v;
+if(sel.has(v)){sel.delete(v);ch.classList.remove('active')}else{sel.add(v);ch.classList.add('active')}
+window._huzarSel = sel;
+};
+});
+window._huzarSel = sel;
+}
+mount();
+
+window.huzarAnalizar = function(){
+let sel = window._huzarSel; let n = sel.size;
+if(n==0){alert('Marca al menos 1 síntoma 💛');return}
+let bar=document.getElementById('huzarBar');
+let capas=[
+` <b>1. PREGUNTA ↓</b> ¿Mi celular tiene virus o es otra cosa? Analizando ${n} síntomas en Bogotá 2026.`,
+` <b>2. CONOCIMIENTO ACTUAL ↓</b> Con ${n} síntomas, probabilidad: ${n>=3?'78% adware por app instalada':'35% memoria llena, no virus'}. Hoy el virus real es raro, el adware es común.`,
+` <b>3. ANTIGÜEDAD Y CALIDAD ↓</b> 🟢 Play Protect 2025 + ESET 2026 (alta). 🟡 Tus 1200 familias Huzar (media-alta). 🔴 Antivirus gratis TikTok (baja) = trampa.`,
+` <b>4. CONTRADICCIONES Y LÍMITES ↓</b> Contradicción: instalar limpiador gratis empeora. Límite: si tiene 64GB lleno, no es virus, es memoria.`,
+` <b>5. LO QUE FALTA INVESTIGAR ↓</b> ¿Qué instalaste últimos 7 días? ¿Diste permiso "mostrar encima"? Esa app es la clave.`,
+` <b>6. CONEXIONES INNOVADORAS ↓</b> Tu celular con ${[...sel].join(', ')} no es basura, es tu primer caso de estudio que vale $35k.`,
+` <b>7. ACCIÓN RESPONSABLE ↓</b> AHORA: 1) Ajustes > Apps > Últimas > Desinstala rara. 2) Modo seguro. 3) Play Protect > Escanear. 4) No instales limpiadores. Si sigue, Escudo Huzar.`
+];
+let ids=['hL1','hL2','hL3','hL4','hL5','hL6','hL7'];
+ids.forEach((id,i)=>{
+let el=document.getElementById(id);
+setTimeout(()=>{
+el.style.display='block';el.innerHTML=capas[i];
+bar.style.width=((i+1)/7*100)+'%';
+if(i==6)document.getElementById('huzarCTA').style.display='block';
+el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}, i*450);
+});
+}
+})();
+</script> 
